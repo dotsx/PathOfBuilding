@@ -328,9 +328,10 @@ function GemSelectClass:UpdateSortCache()
 		sortCache.dps[gemId] = baseDPS
 		-- Ignore gems that don't support the active skill
 		if sortCache.canSupport[gemId] or gemData.grantedEffect.hasGlobalEffect then
-			local output = self:CalcOutputWithThisGem(calcFunc, gemData, self:GetQualityType(gemId))
+			-- local output = self:CalcOutputWithThisGem(calcFunc, gemData, self:GetQualityType(gemId))
 			-- Check for nil because some fields may not be populated, default to 0
-			sortCache.dps[gemId] = (dpsField == "FullDPS" and output[dpsField] ~= nil and output[dpsField]) or (output.Minion and output.Minion.CombinedDPS) or (output[dpsField] ~= nil and output[dpsField]) or 0
+			-- sortCache.dps[gemId] = (dpsField == "FullDPS" and output[dpsField] ~= nil and output[dpsField]) or (output.Minion and output.Minion.CombinedDPS) or (output[dpsField] ~= nil and output[dpsField]) or 0
+			sortCache.dps[gemId] = baseDPS
 		end
 		-- Color based on the DPS
 		if sortCache.dps[gemId] > baseDPS then
