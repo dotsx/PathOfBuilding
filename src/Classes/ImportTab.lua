@@ -42,9 +42,9 @@ local ImportTabClass = newClass("ImportTab", "ControlHost", "Control", function(
 	self.controls.accountName = new("EditControl", {"LEFT",self.controls.accountRealm,"RIGHT"}, 8, 0, 200, 20, main.lastAccountName or "", nil, "%c", nil, nil, nil, nil, true)
 	self.controls.accountName.pasteFilter = function(text)
 		return text:gsub("[\128-\255]",function(c)
-			return codePointToUTF8(c:byte(1)):gsub(".",function(c)
+			-- return codePointToUTF8(c:byte(1)):gsub(".",function(c)
 				return string.format("%%%X", c:byte(1))
-			end)
+			-- end)
 		end)
 	end
 	-- accountHistory Control
