@@ -555,7 +555,7 @@ local modNameList = {
 	["maximum number of summoned holy relics"] = "ActiveHolyRelicLimit",
 	["number of summoned arbalists"] = "ActiveArbalistLimit",
 	["minion duration"] = { "Duration", tag = { type = "SkillType", skillType = SkillType.CreatesMinion } },
-	["skeleton duration"] = { "Duration", tag = { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true } },
+	["skeleton duration"] = { "Duration", tag = { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true } },
 	["sentinel of dominance duration"] = { "Duration", tag = { type = "SkillName", skillName = "Dominating Blow", includeTransfigured = true } },
 	-- Other skill modifiers
 	["radius"] = "AreaOfEffect",
@@ -777,7 +777,8 @@ local modNameList = {
 	["soul eater"] = "Condition:CanHaveSoulEater",
 	["phasing"] = "Condition:Phasing",
 	["arcane surge"] = "Condition:ArcaneSurge",
-	["unholy might"] = "Condition:UnholyMight",
+	["unholy might"] = { "Condition:UnholyMight", "Condition:CanWither" },
+	["chaotic might"] = "Condition:ChaoticMight",
 	["lesser brutal shrine buff"] = "Condition:LesserBrutalShrine",
 	["lesser massive shrine buff"] = "Condition:LesserMassiveShrine",
 	["diamond shrine buff"] = "Condition:DiamondShrine",
@@ -930,7 +931,7 @@ local modFlagList = {
 	["minion"] = { addToMinion = true },
 	["zombie"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Zombie", includeTransfigured = true } },
 	["raised zombie"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Zombie", includeTransfigured = true } },
-	["skeleton"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true } },
+	["skeleton"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true } },
 	["spectre"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Spectre", includeTransfigured = true } },
 	["raised spectre"] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Spectre", includeTransfigured = true } },
 	["golem"] = { addToMinion = true, addToMinionTag = { type = "SkillType", skillType = SkillType.Golem } },
@@ -1001,7 +1002,7 @@ local preFlagList = {
 	["^golem skills have "] = { tag = { type = "SkillType", skillType = SkillType.Golem } },
 	["^zombies [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Zombie", includeTransfigured = true } },
 	["^raised zombies [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Zombie", includeTransfigured = true } },
-	["^skeletons [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true } },
+	["^skeletons [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true } },
 	["^raging spirits [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Raging Spirit", includeTransfigured = true } },
 	["^summoned raging spirits [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Summon Raging Spirit", includeTransfigured = true } },
 	["^spectres [hd][ae][va][el] "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Raise Spectre", includeTransfigured = true } },
@@ -1032,7 +1033,7 @@ local preFlagList = {
 	["^summoned sentinels of absolution have "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillName = "Absolution", includeTransfigured = true } },
 	["^summoned sentinels have "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillNameList = { "Herald of Purity", "Dominating Blow", "Absolution" }, includeTransfigured = true } },
 	["^raised zombies' slam attack has "] = { addToMinion = true, tag = { type = "SkillId", skillId = "ZombieSlam" } },
-	["^raised spectres, raised zombies, and summoned skeletons have "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillNameList = { "Raise Spectre", "Raise Zombie", "Summon Skeleton" }, includeTransfigured = true } },
+	["^raised spectres, raised zombies, and summoned skeletons have "] = { addToMinion = true, addToMinionTag = { type = "SkillName", skillNameList = { "Raise Spectre", "Raise Zombie", "Summon Skeletons" }, includeTransfigured = true } },
 	-- Totem/trap/mine
 	["^attacks used by totems have "] = { flags = ModFlag.Attack, keywordFlags = KeywordFlag.Totem },
 	["^spells cast by totems [hd][ae][va][el] "] = { flags = ModFlag.Spell, keywordFlags = KeywordFlag.Totem },
@@ -2225,7 +2226,7 @@ local specialModList = {
 	["you have (%d+) fortification"] = function(num) return { mod("MinimumFortification", "BASE", num) } end,
 	["enemies taunted by you cannot evade attacks"] = { mod("EnemyModifier", "LIST", { mod = flag("CannotEvade", { type = "Condition", var = "Taunted" }) }) },
 	["if you've impaled an enemy recently, you and nearby allies have %+(%d+) to armour"] = function (num) return { mod("ExtraAura", "LIST", { mod = mod("Armour", "BASE", num) }, { type = "Condition", var = "ImpaledRecently" }) } end,
-	["your hits permanently intimidate enemies that are on full life"] = { mod("EnemyModifier", "LIST", { mod = flag("Condition:Intimidated") }) },
+	["your hits permanently intimidate enemies that are on full life"] = { mod("EnemyModifier", "LIST", { mod = flag("Condition:Intimidated", { type = "Condition", var = "ChampionIntimidate" }) }) },
 	["you and allies affected by your placed banners regenerate ([%d%.]+)%% of life per second for each stage"] = function(num) return {
 		mod("ExtraAura", "LIST", { mod = mod("LifeRegenPercent", "BASE", num, { type = "Condition", var = "AffectedByPlacedBanner" }, { type = "Multiplier", var = "BannerStage" }) })
 	} end,
@@ -2716,6 +2717,10 @@ local specialModList = {
 	--Doomsower, Lion Sword
 	["attack skills gain (%d+)%% of physical damage as extra fire damage per socketed red gem"] = function(num) return { mod("SocketProperty", "LIST", { value = mod("PhysicalDamageGainAsFire", "BASE", num, nil, ModFlag.Attack) }, { type = "SocketedIn", slotName = "{SlotName}", keyword = "strength", sockets = {1,2,3,4,5,6} }) } end,
 	["you have vaal pact while all socketed gems are red"] = { mod("GroupProperty", "LIST", { value = mod("Keystone", "LIST", "Vaal Pact") }, { type = "SocketedIn", slotName = "{SlotName}", socketColor = "R", sockets = "all" }) },
+	-- Mahuxotl's Machination Steel Kite Shield
+	["everlasting sacrifice"] = { 
+		flag("Condition:EverlastingSacrifice")
+	},
 	 -- Self hit dmg
 	["take (%d+) (.+) damage when you ignite an enemy"] = function(dmg, _, dmgType) return {
 		mod("EyeOfInnocenceSelfDamage", "LIST", {baseDamage = dmg, damageType = dmgType})
@@ -3303,7 +3308,8 @@ local specialModList = {
 	["onslaught"] = { flag("Condition:Onslaught") },
 	["rampage"] = { flag("Condition:Rampage") },
 	["soul eater"] = { flag("Condition:CanHaveSoulEater") },
-	["unholy might"] = { flag("Condition:UnholyMight") },
+	["unholy might"] = { flag("Condition:UnholyMight"), flag("Condition:CanWither"), },
+	["chaotic might"] = { flag("Condition:ChaoticMight") },
 	["elusive"] = { flag("Condition:CanBeElusive") },
 	["adrenaline"] = { flag("Condition:Adrenaline") },
 	["arcane surge"] = { flag("Condition:ArcaneSurge") },
@@ -3576,8 +3582,10 @@ local specialModList = {
 	["debilitate nearby enemies for (%d+) seconds? when f?l?a?s?k? ?effect ends"] = { mod("DebilitateChance", "BASE", 100) },
 	["counterattacks have a (%d+)%% chance to debilitate on hit for (%d+) seconds?"] = function (num) return { mod("DebilitateChance", "BASE", num) } end,
 	["eat a soul when you hit a unique enemy, no more than once every second"] = { flag("Condition:CanHaveSoulEater") },
+	["eat a soul when you hit a rare or unique enemy, no more than once every [%d%.]+ seconds"] = { flag("Condition:CanHaveSoulEater") },
 	["(%d+)%% chance to gain soul eater for (%d+) seconds on killing blow against rare and unique enemies with double strike or dual strike"] = { flag("Condition:CanHaveSoulEater") },
 	["maximum (%d+) eaten souls"] = function(num) return { mod("SoulEaterMax", "OVERRIDE", num) } end,
+	["([%+%-]%d+) to maximum number of eaten souls"] = function(num) return { mod("SoulEaterMax", "BASE", num) } end,
 	["(%d+)%% increased attack and cast speed if you've killed recently"] = function(num) return { --This boot enchant gives a buff that applies both stats individually
 		mod("Speed", "INC", num, nil, ModFlag.Cast, { type = "Condition", var = "KilledRecently" }),
 		mod("Speed", "INC", num, nil, ModFlag.Attack, { type = "Condition", var = "KilledRecently" }),
@@ -3716,10 +3724,10 @@ local specialModList = {
 	["minions convert (%d+)%% of physical damage to cold damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("PhysicalDamageConvertToCold", "BASE", num) }) } end,
 	["minions convert (%d+)%% of physical damage to fire damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("PhysicalDamageConvertToFire", "BASE", num) }) } end,
 	["minions convert (%d+)%% of physical damage to chaos damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("PhysicalDamageConvertToChaos", "BASE", num) }) } end,
-	["summoned skeletons have avatar of fire"] = { mod("MinionModifier", "LIST", { mod = mod("Keystone", "LIST", "Avatar of Fire") }, { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true }) },
-	["summoned skeletons take ([%d%.]+)%% of their maximum life per second as fire damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("FireDegen", "BASE", 1, { type = "PercentStat", stat = "Life", percent = num }) }, { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true }) } end,
-	["summoned skeletons have (%d+)%% chance to wither enemies for (%d+) seconds on hit"] = { mod("ExtraSkillMod", "LIST", { mod = flag("Condition:CanWither") }, { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true }) },
-	["summoned skeletons have (%d+)%% of physical damage converted to chaos damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("PhysicalDamageConvertToChaos", "BASE", num) }, { type = "SkillName", skillName = "Summon Skeleton", includeTransfigured = true }) } end,
+	["summoned skeletons have avatar of fire"] = { mod("MinionModifier", "LIST", { mod = mod("Keystone", "LIST", "Avatar of Fire") }, { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true }) },
+	["summoned skeletons take ([%d%.]+)%% of their maximum life per second as fire damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("FireDegen", "BASE", 1, { type = "PercentStat", stat = "Life", percent = num }) }, { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true }) } end,
+	["summoned skeletons have (%d+)%% chance to wither enemies for (%d+) seconds on hit"] = { mod("ExtraSkillMod", "LIST", { mod = flag("Condition:CanWither") }, { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true }) },
+	["summoned skeletons have (%d+)%% of physical damage converted to chaos damage"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("PhysicalDamageConvertToChaos", "BASE", num) }, { type = "SkillName", skillName = "Summon Skeletons", includeTransfigured = true }) } end,
 	["summoned skeletons gain added chaos damage equal to (%d+)%% of maximum energy shield on your equipped shield"] = function(num) return {
 		mod("MinionModifier", "LIST", { mod = mod("ChaosMin", "BASE", 1, { type = "PercentStat", stat = "EnergyShieldOnWeapon 2", actor = "parent", percent = num }) }),
 		mod("MinionModifier", "LIST", { mod = mod("ChaosMax", "BASE", 1, { type = "PercentStat", stat = "EnergyShieldOnWeapon 2", actor = "parent", percent = num }) }),
@@ -3737,10 +3745,13 @@ local specialModList = {
 	["minions have (%d+)%% increased movement speed for each herald affecting you"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("MovementSpeed", "INC", num, { type = "Multiplier", var = "Herald", actor = "parent" }) }) } end,
 	["minions deal (%d+)%% increased damage while you are affected by a herald"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("Damage", "INC", num, { type = "ActorCondition", actor = "parent", var = "AffectedByHerald" }) }) } end,
 	["minions have (%d+)%% increased attack and cast speed while you are affected by a herald"] = function(num) return { mod("MinionModifier", "LIST", { mod = mod("Speed", "INC", num, { type = "ActorCondition", actor = "parent", var = "AffectedByHerald" }) }) } end,
-	["minions have unholy might"] = { mod("MinionModifier", "LIST", { mod = flag("Condition:UnholyMight") }), },
+	["minions have unholy might"] = {
+		mod("MinionModifier", "LIST", { mod = flag("Condition:UnholyMight") }),
+		mod("MinionModifier", "LIST", { mod = flag("Condition:CanWither") }),
+	},
 	["summoned skeleton warriors a?n?d? ?s?o?l?d?i?e?r?s? ?deal triple damage with this weapon if you've hit with this weapon recently"] = {
 		mod("Dummy", "DUMMY", 1, { type = "Condition", var = "HitRecentlyWithWeapon" }), -- Make the Configuration option appear
-		mod("MinionModifier", "LIST", { mod = mod("TripleDamageChance", "BASE", 100, { type = "ActorCondition", actor = "parent", var = "HitRecentlyWithWeapon" }) }, { type = "SkillName", skillName = "Summon Skeleton" }),
+		mod("MinionModifier", "LIST", { mod = mod("TripleDamageChance", "BASE", 100, { type = "ActorCondition", actor = "parent", var = "HitRecentlyWithWeapon" }) }, { type = "SkillName", skillName = "Summon Skeletons" }),
 	},
 	["summoned skeleton warriors a?n?d? ?s?o?l?d?i?e?r?s? ?wield a? ?c?o?p?y? ?o?f? ?this weapon while in your main hand"] = { }, -- just make the mod blue, handled in CalcSetup
 	["each summoned phantasm grants you phantasmal might"] = { flag("Condition:PhantasmalMight") },
@@ -3770,8 +3781,8 @@ local specialModList = {
 		mod("MinionModifier", "LIST", { mod = mod("EnemyShockChance", "BASE", num) }, { type = "SkillName", skillName = "Summon Arbalists" }),
 		mod("MinionModifier", "LIST", { mod = mod("EnemyIgniteChance", "BASE", num) }, { type = "SkillName", skillName = "Summon Arbalists" }),
 	} end,
-	["skeleton warriors are permanent minions and follow you"] = { flag("RaisedSkeletonPermanentDuration", { type = "SkillName", skillName = "Summon Skeleton" }) }, -- typo never existed except in some items generated by PoB
-	["summoned skeleton warriors are permanent and follow you"] = { flag("RaisedSkeletonPermanentDuration", { type = "SkillName", skillName = "Summon Skeleton" }) },
+	["skeleton warriors are permanent minions and follow you"] = { flag("RaisedSkeletonPermanentDuration", { type = "SkillName", skillName = "Summon Skeletons" }) }, -- typo never existed except in some items generated by PoB
+	["summoned skeleton warriors are permanent and follow you"] = { flag("RaisedSkeletonPermanentDuration", { type = "SkillName", skillName = "Summon Skeletons" }) },
 	-- Projectiles
 	["skills chain %+(%d) times"] = function(num) return { mod("ChainCountMax", "BASE", num) } end,
 	["arrows chain %+(%d) times"] = function(num) return { mod("ChainCountMax", "BASE", num, nil, ModFlag.Bow) } end,
@@ -4161,6 +4172,10 @@ local specialModList = {
 		flag("StunThresholdBasedOnManaInsteadOfLife"),
 		mod("StunThresholdManaPercent", "BASE", num),
 	} end,
+	["(%d+)%% of your energy shield is added to your stun threshold"] = function(num) return {
+		flag("AddESToStunThreshold"),
+		mod("ESToStunThresholdPercent", "BASE", num),
+	} end,
 	["(%d+)%% increased armour per second you've been stationary, up to a maximum of (%d+)%%"] = function(num, _, limit) return {
 		mod("Armour", "INC", num, { type = "Multiplier", var = "StationarySeconds", limit = tonumber(limit / num) }, { type = "Condition", var = "Stationary" }),
 	} end,
@@ -4221,7 +4236,7 @@ local specialModList = {
 	["removes freeze and chill on use"] = { },
 	["removes poison on use"] = { },
 	["removes shock on use"] = { },
-	["g?a?i?n? ?unholy might during f?l?a?s?k? ?effect"] = { flag("Condition:UnholyMight", { type = "Condition", var = "UsingFlask" }) },
+	["g?a?i?n? ?unholy might during f?l?a?s?k? ?effect"] = { flag("Condition:UnholyMight", { type = "Condition", var = "UsingFlask" }), flag("Condition:CanWither", { type = "Condition", var = "UsingFlask" }), },
 	["zealot's oath during f?l?a?s?k? ?effect"] = { flag("ZealotsOath", { type = "Condition", var = "UsingFlask" }) },
 	["grants level (%d+) (.+) curse aura during f?l?a?s?k? ?effect"] = function(num, _, skill) return { mod("ExtraCurse", "LIST", { skillId = gemIdLookup[skill:gsub(" skill","")] or "Unknown", level = num }, { type = "Condition", var = "UsingFlask" }) } end,
 	["shocks nearby enemies during f?l?a?s?k? ?effect, causing (%d+)%% increased damage taken"] = function(num) return {
@@ -4311,6 +4326,7 @@ local specialModList = {
 	["primordial"] = { mod("Multiplier:PrimordialItem", "BASE", 1) },
 	["spectres have a base duration of (%d+) seconds"] = { mod("SkillData", "LIST", { key = "duration", value = 6 }, { type = "SkillName", skillName = "Raise Spectre", includeTransfigured = true }) },
 	["flasks applied to you have (%d+)%% increased effect"] = function(num) return { mod("FlaskEffect", "INC", num, { type = "ActorCondition", actor = "player"}) } end,
+	["flasks applied to you have (%d+)%% increased effect per level"] = function(num) return { mod("FlaskEffect", "INC", num, { type = "ActorCondition", actor = "player"}, { type = "Multiplier", var = "Level" }) } end,
 	["while a unique enemy is in your presence, flasks applied to you have (%d+)%% increased effect"] = function(num) return { mod("FlaskEffect", "INC", num, { type = "ActorCondition", actor = "enemy", var = "RareOrUnique" }, { type = "ActorCondition", actor = "player"}) } end,
 	["while a pinnacle atlas boss is in your presence, flasks applied to you have (%d+)%% increased effect"] = function(num) return { mod("FlaskEffect", "INC", num, { type = "ActorCondition", actor = "enemy", var = "PinnacleBoss" }, { type = "ActorCondition", actor = "player"}) } end,
 	["magic utility flasks applied to you have (%d+)%% increased effect"] = function(num) return { mod("MagicUtilityFlaskEffect", "INC", num, { type = "ActorCondition", actor = "player"}) } end,
@@ -4509,6 +4525,7 @@ local specialModList = {
 	["your hits can't be evaded by blinded enemies"] = { flag("CannotBeEvaded", { type = "ActorCondition", actor = "enemy", var = "Blinded" }) },
 	["blind does not affect your chance to hit"] = { flag("IgnoreBlindHitChance") },
 	["enemies blinded by you while you are blinded have malediction"] = { mod("EnemyModifier", "LIST", { mod = flag("HasMalediction", { type = "Condition", var = "Blinded" }) }, { type = "Condition", var = "Blinded" }, { type = "Condition", var = "CannotBeBlinded", neg = true }) },
+	["enemies blinded by you have malediction"] = { mod("EnemyModifier", "LIST", { mod = flag("HasMalediction", { type = "Condition", var = "Blinded" }) }) },
 	["skills which throw traps have blood magic"] = { flag("CostLifeInsteadOfMana", { type = "SkillType", skillType = SkillType.Trapped }) },
 	["skills which throw traps cost life instead of mana"] = { flag("CostLifeInsteadOfMana", { type = "SkillType", skillType = SkillType.Trapped }) },
 	["strength provides no bonus to maximum life"] = { flag("NoStrBonusToLife") },
@@ -4535,6 +4552,9 @@ local specialModList = {
 	} end,
 	["when you lose temporal chains you gain maximum rage"] = { flag("Condition:CanGainRage") },
 	["with a murderous eye jewel socketed, melee attacks grant (%d+) rage on hit, no more than once every second"] = { flag("Condition:CanGainRage", { type = "Condition", var = "HaveMurderousEyeJewelIn{SlotName}" }) },
+	["gain %d+ rage after spending a total of %d+ mana"] = { flag("Condition:CanGainRage") },
+	["rage grants cast speed instead of attack speed"] = { flag("Condition:RageCastSpeed") },
+	["rage grants spell damage instead of attack damage"] = { flag("Condition:RageSpellDamage") },
 	["your critical strike multiplier is (%d+)%%"] = function(num) return { mod("CritMultiplier", "OVERRIDE", num) } end,
 	["base critical strike chance for attacks with weapons is ([%d%.]+)%%"] = function(num) return { mod("WeaponBaseCritChance", "OVERRIDE", num) } end,
 	["base critical strike chance of spells is the critical strike chance of y?o?u?r? ?main hand weapon"] = { flag("BaseCritFromMainHand", nil, ModFlag.Spell) }, -- old wordings
@@ -4973,6 +4993,7 @@ local flagTypes = {
 	["fortify"] = "Condition:Fortified",
 	["fortified"] = "Condition:Fortified",
 	["unholy might"] = "Condition:UnholyMight",
+	["chaotic might"] = "Condition:ChaoticMight",
 	["lesser brutal shrine buff"] = "Condition:LesserBrutalShrine",
 	["lesser massive shrine buff"] = "Condition:LesserMassiveShrine",
 	["tailwind"] = "Condition:Tailwind",
@@ -5128,6 +5149,20 @@ local jewelOtherFuncs = {
 		return function(node, out, data)
 			if node and node.type ~= "Keystone" then
 				out:NewMod("Speed", "INC", num, data.modSource, bor(ModFlag.Unarmed, ModFlag.Attack, ModFlag.Melee))
+			end
+		end
+	end,
+	["Passive Skills in Radius also grant (%d+)%% increased Global Critical Strike Chance"] = function(num)
+		return function(node, out, data)
+			if node and node.type ~= "Keystone" then
+				out:NewMod("CritChance", "INC", num, data.modSource)
+			end
+		end
+	end,
+	["Passive Skills in Radius also grant %+(%d+) to Maximum Life"] = function(num)
+		return function(node, out, data)
+			if node and node.type ~= "Keystone" then
+				out:NewMod("Life", "BASE", num, data.modSource)
 			end
 		end
 	end,
