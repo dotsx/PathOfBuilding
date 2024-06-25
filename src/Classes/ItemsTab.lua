@@ -298,6 +298,15 @@ holding Shift will put it in the second.]])
 		self:SetDisplayItem()
 	end)
 
+	
+	self.easyTrade = nil
+	self.controls.priceCheck = new("ButtonControl", {"LEFT", self.controls.removeDisplayItem, "RIGHT"}, 8, 0, 120, 20, "Trade Search", function()
+		if self.easyTrade == nil then
+			self.easyTrade = new('EasyTrade', self)
+		end
+		self.easyTrade:QueryItem(self.displayItem)
+	end)
+
 	-- Section: Variant(s)
 
 	self.controls.displayItemSectionVariant = new("Control", {"TOPLEFT",self.controls.addDisplayItem,"BOTTOMLEFT"}, 0, 8, 0, function()

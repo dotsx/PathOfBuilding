@@ -27,9 +27,9 @@ local function wordsToCaselessPatterns(words)
 	local patterns = {}
 	for idx = 1, #words do
 		-- escape all non alphanumeric chars
-		patterns[idx] = string.gsub(words[idx], "%W", "%%%1")
+		patterns[idx] = utf8.gsub(words[idx], "%W", "%%%1")
 		-- make pattern case insensitive
-		patterns[idx] = string.gsub(patterns[idx], "%a", letterToCaselessPattern)
+		patterns[idx] = utf8.gsub(patterns[idx], "%a", letterToCaselessPattern)
 	end
 	return patterns
 end

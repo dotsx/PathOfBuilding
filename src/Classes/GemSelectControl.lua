@@ -20,7 +20,7 @@ local altQualMap = {
 }
 
 local GemSelectClass = newClass("GemSelectControl", "EditControl", function(self, anchor, x, y, width, height, skillsTab, index, changeFunc, forceTooltip)
-	self.EditControl(anchor, x, y, width, height, nil, nil, "^ %a':-")
+	self.EditControl(anchor, x, y, width, height, nil, nil, "%c%d")
 	self.controls.scrollBar = new("ScrollBarControl", { "TOPRIGHT", self, "TOPRIGHT" }, -1, 0, 18, 0, (height - 4) * 4)
 	self.controls.scrollBar.y = function()
 		local width, height = self:GetSize()
@@ -170,7 +170,7 @@ function GemSelectClass:BuildList(buf)
 		for i, pattern in ipairs(patternList) do
 			local matchList = { }
 			for gemId, gemData in pairs(self.gems) do
-				if self:FilterSupport(gemId, gemData) and not added[gemId] and ((" "..gemData.name:lower()):match(pattern) or altQualMap[self:GetQualityType(gemId)]:lower():match(pattern)) then
+				if self:FilterSupport(gemId, gemData) and not added[gemId] and (self:CheckName(gemData, pattern) or altQualMap[self:GetQualityType(gemId)]:lower():match(pattern)) then
 					addThisGem = true
 					if #tagsList > 0 then
 						for _, tag in ipairs(tagsList) do
@@ -872,4 +872,9 @@ function GemSelectClass:OnKeyUp(key)
 	end
 	local newSel = self.EditControl:OnKeyUp(key)
 	return newSel == self.EditControl and self or newSel
+end
+
+function GemSelectClass:CheckName(gemData, pattern)
+	local err, match = PCall(string.matchOrPattern, gemData.name:lower(), pattern)
+	return not err and match
 end

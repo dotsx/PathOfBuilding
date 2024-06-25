@@ -93,7 +93,7 @@ local EditClass = newClass("EditControl", "ControlHost", "Control", "UndoHandler
 end)
 
 function EditClass:SetText(text, notify)
-	self.buf = tostring(text)
+	self.buf = urlDecode(tostring(text))
 	self.caret = #self.buf + 1
 	self.sel = nil
 	if notify and self.changeFunc then
@@ -148,7 +148,7 @@ function EditClass:ReplaceSel(text)
 		return
 	end
 	self.buf = newBuf
-	self.caret = left + #text
+	self.caret = left + utf8.len(text)
 	self.sel = nil
 	self:ScrollCaretIntoView()
 	self.blinkStart = GetTime()
@@ -170,7 +170,7 @@ function EditClass:Insert(text)
 		return
 	end
 	self.buf = newBuf
-	self.caret = self.caret + #text
+	self.caret = self.caret + utf8.len(text)
 	self.sel = nil
 	self:ScrollCaretIntoView()
 	self.blinkStart = GetTime()
@@ -525,7 +525,7 @@ function EditClass:OnKeyDown(key, doubleClick)
 			if self.pasteFilter then
 				text = self.pasteFilter(text)
 			end
-			text = text:gsub("[\128-\255]","?")
+			text = urlDecode(text)
 			if self.sel and self.sel ~= self.caret then
 				self:ReplaceSel(text)
 			else

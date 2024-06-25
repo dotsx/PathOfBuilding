@@ -17,6 +17,7 @@ local realmList = {
 	{ label = "Tencent", id = "PC", realmCode = "pc", hostName = "https://poe.game.qq.com/", profileURL = "account/view-profile/" },
 }
 
+table.sort(realmList, function(a,b) return a.realmCode < b.realmCode or a.label > b.label end)
 local influenceInfo = itemLib.influenceInfo
 
 local ImportTabClass = newClass("ImportTab", "ControlHost", "Control", function(self, build)
@@ -51,8 +52,9 @@ local ImportTabClass = newClass("ImportTab", "ControlHost", "Control", function(
 	if not historyList then
 		historyList = { }
 		for accountName, account in pairs(main.gameAccounts) do
-			t_insert(historyList, accountName)
-			historyList[accountName] = true
+			local name = urlDecode(accountName)
+			t_insert(historyList, name)
+			historyList[name] = true
 		end
 		table.sort(historyList, function(a,b)
 			return a:lower() < b:lower()
@@ -124,6 +126,11 @@ You can get this from your web browser's cookies while logged into the Path of E
 	end)
 	self.controls.sessionGo.enabled = function()
 		return #self.controls.sessionInput.buf == 32
+	end
+	self.controls.qqInput = new("EditControl", {"TOPLEFT", self.controls.sessionInput, "BOTTOMLEFT"}, 0, 8, 350, 20, "", "QQ")
+	self.controls.qqInput.shown = function()
+		local realm = realmList[self.controls.accountRealm.selIndex]
+		return realm.label == "Tencent"
 	end
 
 	-- Stage: select character and import data
@@ -397,7 +404,9 @@ function ImportTabClass:DownloadCharacterList()
 	  -- Trim Trailing/Leading spaces
 	local accountName = self.controls.accountName.buf:gsub('%s+', '')
 	local realm = realmList[self.controls.accountRealm.selIndex]
-	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[accountName] and main.gameAccounts[accountName].sessionID)
+	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[urlEncode(accountName)] and main.gameAccounts[urlEncode(accountName)].sessionID)
+	local cookie = #self.controls.qqInput.buf > 0 and "; p_uin=o0" .. self.controls.qqInput.buf or ""
+	ConPrintf(cookie)
 	launch:DownloadPage(realm.hostName.."character-window/get-characters?accountName="..accountName.."&realm="..realm.realmCode, function(response, errMsg)
 		if errMsg == "Response code: 401" then
 			self.charImportStatus = colorCodes.NEGATIVE.."Sign-in is required."
@@ -477,8 +486,8 @@ function ImportTabClass:DownloadCharacterList()
 
 			-- We only get here if the accountname was correct, found, and not private, so add it to the account history.
 			self:SaveAccountHistory()
-		end, sessionID and { header = "Cookie: POESESSID=" .. sessionID })
-	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID })
+		end, sessionID and { header = "Cookie: POESESSID=" .. sessionID .. cookie })
+	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID .. cookie })
 end
 
 function ImportTabClass:BuildCharacterList(league)
@@ -531,7 +540,8 @@ function ImportTabClass:DownloadPassiveTree()
 	self.charImportStatus = "Retrieving character passive tree..."
 	local realm = realmList[self.controls.accountRealm.selIndex]
 	local accountName = self.controls.accountName.buf
-	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[accountName] and main.gameAccounts[accountName].sessionID)
+	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[urlEncode(accountName)] and main.gameAccounts[urlEncode(accountName)].sessionID)
+	local cookie = #self.controls.qqInput.buf > 0 and "; p_uin=o0" .. self.controls.qqInput.buf or ""
 	local charSelect = self.controls.charSelect
 	local charData = charSelect.list[charSelect.selIndex].char
 	launch:DownloadPage(realm.hostName.."character-window/get-passive-skills?accountName="..accountName.."&character="..charData.name.."&realm="..realm.realmCode, function(response, errMsg)
@@ -545,7 +555,7 @@ function ImportTabClass:DownloadPassiveTree()
 		end
 		self.lastCharacterHash = common.sha1(charData.name)
 		self:ImportPassiveTreeAndJewels(response.body, charData)
-	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID })
+	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID .. cookie })
 end
 
 function ImportTabClass:DownloadItems()
@@ -553,7 +563,8 @@ function ImportTabClass:DownloadItems()
 	self.charImportStatus = "Retrieving character items..."
 	local realm = realmList[self.controls.accountRealm.selIndex]
 	local accountName = self.controls.accountName.buf
-	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[accountName] and main.gameAccounts[accountName].sessionID)
+	local sessionID = #self.controls.sessionInput.buf == 32 and self.controls.sessionInput.buf or (main.gameAccounts[urlEncode(accountName)] and main.gameAccounts[urlEncode(accountName)].sessionID)
+	local cookie = #self.controls.qqInput.buf > 0 and "; p_uin=o0" .. self.controls.qqInput.buf or ""
 	local charSelect = self.controls.charSelect
 	local charData = charSelect.list[charSelect.selIndex].char
 	launch:DownloadPage(realm.hostName.."character-window/get-items?accountName="..accountName.."&character="..charData.name.."&realm="..realm.realmCode, function(response, errMsg)
@@ -567,14 +578,14 @@ function ImportTabClass:DownloadItems()
 		end
 		self.lastCharacterHash = common.sha1(charData.name)
 		self:ImportItemsAndSkills(response.body)
-	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID })
+	end, sessionID and { header = "Cookie: POESESSID=" .. sessionID ..  cookie})
 end
 
 function ImportTabClass:ImportPassiveTreeAndJewels(json, charData)
 	--local out = io.open("get-passive-skills.json", "w")
 	--out:write(json)
 	--out:close()
-	local charPassiveData, errMsg = self:ProcessJSON(json)
+	local charPassiveData, errMsg = self:ProcessJSON(PostProcessStr(json))
 	--local out = io.open("get-passive-skills.json", "w")
 	--writeLuaTable(out, charPassiveData, 1)
 	--out:close()
@@ -646,7 +657,7 @@ function ImportTabClass:ImportItemsAndSkills(json)
 	--local out = io.open("get-items.json", "w")
 	--out:write(json)
 	--out:close()
-	local charItemData, errMsg = self:ProcessJSON(json)
+	local charItemData, errMsg = self:ProcessJSON(PostProcessStr(json))
 	if errMsg then
 		self.charImportStatus = colorCodes.NEGATIVE.."Error processing character data, try again later."
 		return
