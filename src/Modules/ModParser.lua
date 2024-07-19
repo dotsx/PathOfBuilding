@@ -219,6 +219,7 @@ local modNameList = {
 	-- Resistances
 	["physical damage reduction"] = "PhysicalDamageReduction",
 	["physical damage reduction from hits"] = "PhysicalDamageReductionWhenHit",
+	["elemental damage reduction"] = "ElementalDamageReduction",
 	["fire resistance"] = "FireResist",
 	["maximum fire resistance"] = "FireResistMax",
 	["cold resistance"] = "ColdResist",
@@ -2125,9 +2126,7 @@ local specialModList = {
 	["armour also applies to chaos damage taken from hits"] = function(num) return { mod("ArmourAppliesToChaosDamageTaken", "BASE", 100) } end,
 	["maximum damage reduction for any damage type is (%d+)%%"] = function(num) return { mod("DamageReductionMax", "OVERRIDE", num) } end,
 	["gain additional elemental damage reduction equal to half your chaos resistance"] = {
-		mod("FireDamageReduction", "BASE", 1, { type = "PerStat", stat = "ChaosResist", div = 2 }),
-		mod("ColdDamageReduction", "BASE", 1, { type = "PerStat", stat = "ChaosResist", div = 2 }),
-		mod("LightningDamageReduction", "BASE", 1, { type = "PerStat", stat = "ChaosResist", div = 2 })
+		mod("ElementalDamageReduction", "BASE", 1, { type = "PerStat", stat = "ChaosResist", div = 2 })
 	},
 	["(%d+)%% of maximum mana is converted to twice that much armour"] = function(num) return {
 		mod("ManaConvertToArmour", "BASE", num),
@@ -4441,6 +4440,9 @@ local specialModList = {
 	},
 	["attacks have blood magic"] = { flag("CostLifeInsteadOfMana", nil, ModFlag.Attack) },
 	["attacks cost life instead of mana"] = { flag("CostLifeInsteadOfMana", nil, ModFlag.Attack) },
+	["attack skills cost life instead of (%d+)%% of mana cost"] = function(num) return { 
+		mod("HybridManaAndLifeCost_Life", "BASE", num, nil, ModFlag.Attack) 
+	} end,
 	["(%d+)%% chance to cast a? ?socketed lightning spells? on hit"] = { mod("ExtraSupport", "LIST", { skillId = "SupportUniqueMjolnerLightningSpellsCastOnHit", level = 1 }, { type = "SocketedIn", slotName = "{SlotName}" }) },
 	["cast a socketed lightning spell on hit"] = { mod("ExtraSupport", "LIST", { skillId = "SupportUniqueMjolnerLightningSpellsCastOnHit", level = 1 }, { type = "SocketedIn", slotName = "{SlotName}" }) },
 	["trigger a socketed lightning spell on hit"] = { mod("ExtraSupport", "LIST", { skillId = "SupportUniqueMjolnerLightningSpellsCastOnHit", level = 1 }, { type = "SocketedIn", slotName = "{SlotName}" }) },
@@ -4464,6 +4466,10 @@ local specialModList = {
 	["reserves (%d+)%% of life"] = function(num) return { mod("ExtraLifeReserved", "BASE", num) } end,
 	["(%d+)%% of cold damage taken as lightning"] = function(num) return { mod("ColdDamageTakenAsLightning", "BASE", num) } end,
 	["(%d+)%% of fire damage taken as lightning"] = function(num) return { mod("FireDamageTakenAsLightning", "BASE", num) } end,
+	["(%d+)%% of fire and lightning damage from hits taken as cold damage during effect"] = function(num) return { 
+		mod("FireDamageFromHitsTakenAsCold", "BASE", num, { type = "Condition", var = "UsingFlask" }), 
+		mod("LightningDamageFromHitsTakenAsCold", "BASE", num, { type = "Condition", var = "UsingFlask" }), 
+	} end,
 	["items and gems have (%d+)%% reduced attribute requirements"] = function(num) return { mod("GlobalAttributeRequirements", "INC", -num) } end,
 	["items and gems have (%d+)%% increased attribute requirements"] = function(num) return { mod("GlobalAttributeRequirements", "INC", num) } end,
 	["mana reservation of herald skills is always (%d+)%%"] = function(num) return { mod("SkillData", "LIST", { key = "ManaReservationPercentForced", value = num }, { type = "SkillType", skillType = SkillType.Herald }) } end,
