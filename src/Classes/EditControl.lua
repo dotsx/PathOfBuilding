@@ -313,7 +313,11 @@ function EditClass:Draw(viewPort, noTooltip)
 	end
 	if self.drag then
 		local cursorX, cursorY = GetCursorPos()
-		self.caret = DrawStringCursorIndex(textHeight, self.font, self.buf, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY + self.controls.scrollBarV.offset)
+		local realText = self.buf
+		if self.protected then
+			realText = string.rep(protected_replace, #self.buf)
+		end
+		self.caret = DrawStringCursorIndex(textHeight, self.font, realText, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY + self.controls.scrollBarV.offset)
 		self.lastUndoState.caret = self.caret
 		self:ScrollCaretIntoView()
 	end
@@ -375,17 +379,23 @@ function EditClass:Draw(viewPort, noTooltip)
 		local pre = self.textCol .. self.buf:sub(1, left - 1)
 		local sel = self.selCol .. StripEscapes(self.buf:sub(left, right - 1))
 		local post = self.textCol .. self.buf:sub(right)
+		local realText = pre
 		if self.protected then
-			DrawString(textX, textY, "LEFT", textHeight, self.font, self.textCol .. string.rep(protected_replace, #pre-#self.textCol))
+			realText = self.textCol .. string.rep(protected_replace, #pre-#self.textCol)
+			DrawString(textX, textY, "LEFT", textHeight, self.font, realText)
 		else
 			DrawString(textX, textY, "LEFT", textHeight, self.font, pre)
 		end
-		textX = textX + DrawStringWidth(textHeight, self.font, pre)
-		local selWidth = DrawStringWidth(textHeight, self.font, sel)
+		textX = textX + DrawStringWidth(textHeight, self.font, realText)
+		local realText2 = sel
+		if self.protected then
+			realText2 = self.selCol .. string.rep(protected_replace, #sel-#self.selCol)
+		end
+		local selWidth = DrawStringWidth(textHeight, self.font, realText2)
 		SetDrawColor(self.selBGCol)
 		DrawImage(nil, textX, textY, selWidth, textHeight)
 		if self.protected then
-			DrawString(textX, textY, "LEFT", textHeight, self.font, self.selCol .. string.rep(protected_replace, #sel-#self.selCol))
+			DrawString(textX, textY, "LEFT", textHeight, self.font, realText2)
 		else
 			DrawString(textX, textY, "LEFT", textHeight, self.font, sel)
 		end
@@ -402,12 +412,14 @@ function EditClass:Draw(viewPort, noTooltip)
 	else
 		local pre = self.textCol .. self.buf:sub(1, self.caret - 1)
 		local post = self.buf:sub(self.caret)
+		local realText = pre
 		if self.protected then
-			DrawString(textX, textY, "LEFT", textHeight, self.font, self.textCol .. string.rep(protected_replace, #pre-#self.textCol))
+			realText = self.textCol .. string.rep(protected_replace, #pre-#self.textCol)
+			DrawString(textX, textY, "LEFT", textHeight, self.font, realText)
 		else
 			DrawString(textX, textY, "LEFT", textHeight, self.font, pre)
 		end
-		textX = textX + DrawStringWidth(textHeight, self.font, pre)
+		textX = textX + DrawStringWidth(textHeight, self.font, realText)
 		if self.protected and #post > 0 then
 			DrawString(textX, textY, "LEFT", textHeight, self.font, string.rep(protected_replace, #post))
 		else
@@ -491,7 +503,11 @@ function EditClass:OnKeyDown(key, doubleClick)
 				textX = textX + DrawStringWidth(textHeight, self.font, self.prompt) + textHeight/2
 			end
 			local cursorX, cursorY = GetCursorPos()
-			self.caret = DrawStringCursorIndex(textHeight, self.font, self.buf, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY + self.controls.scrollBarV.offset)
+			local realText = self.buf
+			if self.protected then
+				realText = string.rep(protected_replace, #self.buf)
+			end
+			self.caret = DrawStringCursorIndex(textHeight, self.font, realText, cursorX - textX + self.controls.scrollBarH.offset, cursorY - textY + self.controls.scrollBarV.offset)
 			self.sel = self.caret
 			self.lastUndoState.caret = self.caret
 			self:ScrollCaretIntoView()

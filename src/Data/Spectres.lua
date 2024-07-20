@@ -6803,3 +6803,32 @@ minions["Metadata/Monsters/Revenant/RevenantMapBossStandalone_AtlasUber"] = {
 	modList = {
 	},
 }
+
+-- Moon Dancer
+minions["Metadata/Monsters/LeagueAncestral/AncestralColdPoi_"] = {
+	name = "Moon Dancer",
+	monsterTags = { "human", "humanoid", "karui", "not_str", "red_blood", "very_slow_movement", },
+	baseDamageIgnoresAttackSpeed = true,
+	life = 4.5,
+	energyShield = 1,
+	evasion = 0.3,
+	fireResist = 0,
+	coldResist = 75,
+	lightningResist = 0,
+	chaosResist = 0,
+	damage = 2,
+	damageSpread = 0.2,
+	attackTime = 1.5,
+	attackRange = 6,
+	accuracy = 1,
+	skillList = {
+		"MeleeAtAnimationSpeed",
+		"MPSAncestralPoiProjectile",
+		"AncestralMoonAuraAllies",
+		"AncestralMoonAuraEnemies",
+	},
+	modList = {
+		-- AncestralTrialMonsterChampionFleeAndDamage [monster_chance_to_not_flee_% = 100]
+		-- AncestralTrialMonsterChampionFleeAndDamage [monster_damage_+%_final_vs_monsters_from_ancestral_rank = 200]
+	},
+}

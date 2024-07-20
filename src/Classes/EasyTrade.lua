@@ -385,7 +385,7 @@ function EasyTradeClass:MatchStats(modType, modLine)
     local queryStats = {}
     if typeStats ~= nil then
         local matchStr
-        local valueType = #modLine.modList and type(modLine.modList[1].value) or 'number'
+        local valueType = #modLine.modList > 0 and type(modLine.modList[1].value) or 'number'
         local optionText
         
         if valueType == 'boolean' then
@@ -394,7 +394,7 @@ function EasyTradeClass:MatchStats(modType, modLine)
             matchStr = modLine.line:gsub("[%d%.-%(%)]+","#")
         end
 
-        if modLine.modList[1].name == 'GrantedAscendancyNode' then
+        if #modLine.modList > 0 and modLine.modList[1].name == 'GrantedAscendancyNode' then
             optionText = modLine.modList[1].value.name
             if modLine.modList[1].value.side == 'flesh' then
                 matchStr = 'Allocates # if you have matching modifier on Forbidden Flesh'
@@ -402,7 +402,7 @@ function EasyTradeClass:MatchStats(modType, modLine)
                 matchStr = 'Allocates # if you have matching modifier on Forbidden Flame'
             end
         end
-        if modLine.modList[1].name == 'JewelData' and modLine.modList[1].value.key == "impossibleEscapeKeystone" then
+        if #modLine.modList > 0 and modLine.modList[1].name == 'JewelData' and modLine.modList[1].value.key == "impossibleEscapeKeystone" then
             optionText = modLine.modList[2].value.key
             matchStr = 'Passives in Radius of # can be Allocated'
         end
