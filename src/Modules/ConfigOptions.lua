@@ -31,10 +31,10 @@ end
 
 local function banditTooltip(tooltip, mode, index, value)
 	local banditBenefits = {
-		["None"] = "Grants 2 Passive Skill Points",
-		["Oak"] = "Regenerate 1% of Life per second\n2% additional Physical Damage Reduction\n20% increased Physical Damage",
-		["Kraityn"] = "6% increased Attack and Cast Speed\n10% chance to Avoid Elemental Ailments\n6% increased Movement Speed",
-		["Alira"] = "Regenerate 5 Mana per second\n+20% to Critical Strike Multiplier\n+15% to all Elemental Resistances",
+		["None"] = "Grants 1 Passive Skill Point",
+		["Oak"] = "+40 to Maximum Life",
+		["Kraityn"] = "8% increased Movement Speed",
+		["Alira"] = "+15% to all Elemental Resistances",
 	}
 	local applyModes = { BODY = true, HOVER = true }
 	tooltip:Clear()
@@ -302,8 +302,12 @@ return {
 	{ var = "targetBrandedEnemy", type = "check", label = "Skill is targeting the Branded enemy", ifCond = "TargetingBrandedEnemy", defaultState = true, apply = function(val, modList, enemyModList)
 		modList:NewMod("Condition:TargetingBrandedEnemy", "FLAG", true, "Config")
 	end },
-	{ var = "BrandsInLastQuarter", type = "check", label = "Last 25% of Attached Duration?", ifCond = "BrandLastQuarter", apply = function(val, modList, enemyModList)
+	{ var = "BrandsInLastQuarter", type = "check", label = "Last 25% of attached duration?", ifCond = "BrandLastQuarter", apply = function(val, modList, enemyModList)
 		modList:NewMod("Condition:BrandLastQuarter", "FLAG", true, "Config")
+		modList:NewMod("Condition:BrandLastHalf", "FLAG", true, "Config")
+	end },
+	{ var = "BrandsInLastHalf", type = "check", label = "Last 50% of attached duration?", ifCond = "BrandLastHalf", apply = function(val, modList, enemyModList)
+		modList:NewMod("Condition:BrandLastHalf", "FLAG", true, "Config")
 	end },
 	{ label = "Carrion Golem:", ifSkill = "Summon Carrion Golem", includeTransfigured = true },
 	{ var = "carrionGolemNearbyMinion", type = "count", label = "# of Nearby Non-Golem Minions:", ifSkill = "Summon Carrion Golem", includeTransfigured = true, apply = function(val, modList, enemyModList)
@@ -815,6 +819,7 @@ Huge sets the radius to 11.
 		end
 	end },
 	{ var = "ruthlessSupportMode", type = "list", label = "Ruthless Support Mode:", ifSkill = "Ruthless", tooltip = "Controls how the hit/ailment effect of Ruthless Support is calculated:\n\tAverage: damage is based on the average application\n\tMax Effect: damage is based on maximum effect", list = {{val="AVERAGE",label="Average"},{val="MAX",label="Max Effect"}} },
+	{ var = "ChanceToIgnoreEnemyPhysicalDamageReductionMode", type = "list", label = "Chance To Ignore PDR Mode:", ifMod = "ChanceToIgnoreEnemyPhysicalDamageReduction", tooltip = "Controls how the chance on hit to ignore enemy physical damage reduction is calculated:\n\tMinimum: never ignores unless chance is atleast 100%\n\tAverage: damage is based on the average application\n\tMax Effect: always ignores if you have any chance", list = {{val="MIN",label="Minimum"},{val="AVERAGE",label="Average"},{val="MAX",label="Max Effect"}}, defaultIndex = 2 },
 	{ var = "overrideBloodCharges", type = "countAllowZero", label = "# of Blood Charges (if not maximum):", ifMult = "BloodCharge", apply = function(val, modList, enemyModList)
 		modList:NewMod("BloodCharges", "OVERRIDE", val, "Config", { type = "Condition", var = "Combat" })
 	end },
@@ -1465,6 +1470,9 @@ Huge sets the radius to 11.
 	{ var = "buffFanaticism", type = "check", label = "Do you have Fanaticism?", ifFlag = "Condition:CanGainFanaticism", tooltip = "This will enable the Fanaticism buff itself. (Grants 75% more cast speed, reduced skill cost, and increased area of effect)", apply = function(val, modList, enemyModList)
 		modList:NewMod("Condition:Fanaticism", "FLAG", true, "Config", { type = "Condition", var = "Combat" }, { type = "Condition", var = "CanGainFanaticism" })
 	end },
+	{ var = "conditionHitsAlwaysStun", type = "check", label = "Do your hits always stun?", ifFlag = "Condition:maceMasteryStunCullSpecced", tooltip = "This enables the conditional culling strike from the mace mastery.", apply = function(val, modList, enemyModList)
+		modList:NewMod("CullPercent", "MAX", 10, "Config", { type = "Condition", var = "Combat" }, {type = "Condition", var = "maceMasteryStunCullSpecced"})
+	end },
 	{ var = "multiplierPvpTvalueOverride", type = "count", label = "PvP Tvalue override (ms):", ifFlag = "isPvP", tooltip = "Tvalue in milliseconds. This overrides the Tvalue of a given skill, for instance any with fixed Tvalues, or modified Tvalues", apply = function(val, modList, enemyModList)
 		modList:NewMod("MultiplierPvpTvalueOverride", "BASE", val, "Config", { type = "Condition", var = "Combat" })
 	end },
@@ -1486,6 +1494,9 @@ Huge sets the radius to 11.
 	{ var = "projectileDistance", type = "count", label = "Projectile travel distance:", ifTagType = "DistanceRamp", ifFlag = "projectile" },
 	{ var = "conditionAtCloseRange", type = "check", label = "Is the enemy at Close Range?", ifCond = "AtCloseRange", apply = function(val, modList, enemyModList)
 		modList:NewMod("Condition:AtCloseRange", "FLAG", true, "Config", { type = "Condition", var = "Effective" })
+	end },
+	{ var = "enemyMultiplierEnemyPresenceSeconds", type = "count", label = "Enemy in Your Presence Duration", tooltip = "Number of seconds the enemy has been in your presence.", ifEnemyMult = "EnemyPresenceSeconds", apply = function(val, modList, enemyModList)
+		enemyModList:NewMod("Multiplier:EnemyPresenceSeconds", "BASE", val, "Config", { type = "Condition", var = "Effective" })
 	end },
 	{ var = "conditionEnemyMoving", type = "check", label = "Is the enemy Moving?", ifMod = "BleedChance", apply = function(val, modList, enemyModList)
 		enemyModList:NewMod("Condition:Moving", "FLAG", true, "Config", { type = "Condition", var = "Effective" })
@@ -2011,7 +2022,7 @@ Huge sets the radius to 11.
 	
 	-- Section: Custom mods
 	{ section = "Custom Modifiers", col = 1 },
-	{ var = "customMods", type = "text", label = "", doNotHighlight = true,
+	{ var = "customMods", type = "text", label = "", doNotHighlight = true, resizable = true,
 		apply = function(val, modList, enemyModList, build)
 			for line in val:gmatch("([^\n]*)\n?") do
 				local strippedLine = StripEscapes(line):gsub("^[%s?]+", ""):gsub("[%s?]+$", "")
