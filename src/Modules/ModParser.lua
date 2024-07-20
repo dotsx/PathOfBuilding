@@ -2295,6 +2295,7 @@ local specialModList = {
 	["projectiles deal (%d+)%% increased damage with hits and ailments for each remaining chain"] = function(num) return { mod("Damage", "INC", num, nil, 0, bor(KeywordFlag.Hit, KeywordFlag.Ailment), { type = "PerStat", stat = "ChainRemaining" }, { type = "SkillType", skillType = SkillType.Projectile }) } end,
 	["projectiles deal (%d+)%% increased damage for each remaining chain"] = function(num) return { mod("Damage", "INC", num, nil, ModFlag.Projectile, { type = "PerStat", stat = "ChainRemaining" }) } end,
 	["far shot"] = { flag("FarShot") },
+	["projectiles gain damage as they travel farther, dealing up to (%d+)%% more damage to targets"] = function(num) return { mod("Damage", "MORE", num, nil, bor(ModFlag.Hit, ModFlag.Projectile), { type = "DistanceRamp", ramp = { {35,0},{70,1} } }) } end,
 	["(%d+)%% increased mirage archer duration"] = function(num) return { mod("MirageArcherDuration", "INC", num), } end,
 	["([%-%+]%d+) to maximum number of summoned mirage archers"] = function(num) return { mod("MirageArcherMaxCount", "BASE", num),	} end,
 	["([%-%+]%d+) to maximum number of sacred wisps"] = function(num) return { mod("SacredWispsMaxCount", "BASE", num),	} end,
@@ -2439,6 +2440,18 @@ local specialModList = {
 	["(%d+)%% more attack and movement speed per challenger charge"] = function(num) return {
 		mod("Speed", "MORE", num, nil, ModFlag.Attack, 0, { type = "Multiplier", var = "ChallengerCharge" }),
 		mod("MovementSpeed", "MORE", num, { type = "Multiplier", var = "ChallengerCharge" }),
+	} end,
+	["gain (%d+)%% chance to block from equipped shield instead of the shield's value"] = function(num) return {
+		mod("ReplaceShieldBlock", "OVERRIDE", num)
+	} end,
+	["deal (%d+)%% more damage with hits and ailments to rare and unique enemies for each second they've ever been in your presence, up to a maximum of (%d+)%%"] = function(num, _, limit) return {
+		mod("Damage", "MORE", num, nil, 0, bor(KeywordFlag.Hit, KeywordFlag.Ailment), { type = "Multiplier", var = "EnemyPresenceSeconds", actor = "enemy", limit = tonumber(limit) }, { type = "ActorCondition", actor = "enemy", var = "RareOrUnique" }),
+	} end,
+	["deal (%d+)%% more damage with hits and ailments to rare and unique enemies for every (%d+) seconds they've ever been in your presence, up to a maximum of (%d+)%%"] = function(num, _, div, limit) return {
+		mod("Damage", "MORE", num, nil, 0, bor(KeywordFlag.Hit, KeywordFlag.Ailment), { type = "Multiplier", var = "EnemyPresenceSeconds", actor = "enemy", limit = tonumber(limit), div = div }, { type = "ActorCondition", actor = "enemy", var = "RareOrUnique" }),
+	} end,
+	["(%d+)%% more damage with hits and ailments against enemies that are on low life while you are wielding an axe"] = function(num) return {
+		mod("Damage", "MORE", num, nil, 0, bor(KeywordFlag.Hit, KeywordFlag.Ailment), { type = "ActorCondition", actor = "enemy", var = "LowLife" }, { type = "Condition", var = "UsingAxe" }),
 	} end,
     -- Guardian
 	["grants armour equal to (%d+)%% of your reserved life to you and nearby allies"] = function(num) return { mod("GrantReservedLifeAsAura", "LIST", { mod = mod("Armour", "BASE", num / 100) }) } end,
@@ -4629,12 +4642,18 @@ local specialModList = {
 	["overwhelm (%d+)%% physical damage reduction"] = function(num) return {
 		mod("EnemyPhysicalDamageReduction", "BASE", -num)
 	} end,
+	["hits have (%d+)%% chance to ignore enemy physical damage reduction"] = function(num) return {
+		mod("ChanceToIgnoreEnemyPhysicalDamageReduction", "BASE", num)
+	} end,
 	["hits against you overwhelm (%d+)%% of physical damage reduction"] = function(num) return {
 		mod("EnemyPhysicalOverwhelm", "BASE", num)
 	} end,
 	["impale damage dealt to enemies impaled by you overwhelms (%d+)%% physical damage reduction"] = function(num) return {
 		mod("EnemyImpalePhysicalDamageReduction", "BASE", -num)
 	} end,
+	["impale damage dealt to enemies impaled by you ignores enemy physical damage reduction"] =  {
+		flag("IgnoreEnemyImpalePhysicalDamageReduction")
+	},
 	["nearby enemies are crushed while you have ?a?t? least (%d+) rage"] = function(num) return {
 		-- MultiplierThreshold is on RageStacks because Rage is only set in CalcPerform if Condition:CanGainRage is true, Bear's Girdle does not flag CanGainRage
 		mod("EnemyModifier", "LIST", { mod = flag("Condition:Crushed") }, { type = "MultiplierThreshold", var = "RageStack", threshold = num })
@@ -4661,7 +4680,11 @@ local specialModList = {
 	["you count as dual wielding while you are unencumbered"] = { flag("Condition:DualWielding", { type = "Condition", var = "Unencumbered" }) },
 	["dual wielding does not inherently grant chance to block attack damage"] = { flag("Condition:NoInherentBlock") },
 	["inherent attack speed bonus from dual wielding is doubled while wielding two claws"] = {
-	    flag("Condition:DoubledInherentSpeed", { type = "Condition", var = "DualWieldingClaws" })
+	    flag("Condition:DoubledInherentDualWieldingSpeed", { type = "Condition", var = "DualWieldingClaws" })
+	},
+	["inherent bonuses from dual wielding are doubled"] = {
+	    flag("Condition:DoubledInherentDualWieldingSpeed"),
+	    flag("Condition:DoubledInherentDualWieldingBlock")
 	},
 	["(%d+)%% reduced enemy chance to block sword attacks"] = function(num) return { mod("reduceEnemyBlock", "BASE", num, nil, ModFlag.Sword) } end,
 	["you do not inherently take less damage for having fortification"] = { flag("Condition:NoFortificationMitigation") },
@@ -4717,8 +4740,14 @@ local specialModList = {
 	["hits overwhelm (%d+)%% of physical damage reduction while you have sacrificial zeal"] = function(num) return {
 		mod("EnemyPhysicalDamageReduction", "BASE", -num, nil, { type = "Condition", var = "SacrificialZeal" }),
 	} end,
+	["(%d+)%% chance for hits to ignore enemy physical damage reduction while you have sacrificial zeal"] = function(num) return {
+		mod("ChanceToIgnoreEnemyPhysicalDamageReduction", "BASE", num, nil, { type = "Condition", var = "SacrificialZeal" }),
+	} end,
 	["minions attacks overwhelm (%d+)%% physical damage reduction"] = function(num) return {
 		mod("MinionModifier", "LIST", { mod = mod("EnemyPhysicalDamageReduction", "BASE", -num, { type = "SkillType", skillType = SkillType.Attack }) })
+	} end,
+	["minions hits have (%d+)%% chance to ignore enemy physical damage reduction"] = function(num) return {
+		mod("MinionModifier", "LIST", { mod = mod("ChanceToIgnoreEnemyPhysicalDamageReduction", "BASE", num) })
 	} end,
 	["focus has (%d+)%% increased cooldown recovery rate"] = function(num) return { mod("FocusCooldownRecovery", "INC", num, { type = "Condition", var = "Focused" }) } end,
 	["focus has (%d+)%% reduced cooldown recovery rate"] = function(num) return { mod("FocusCooldownRecovery", "INC", -num, { type = "Condition", var = "Focused" }) } end,
