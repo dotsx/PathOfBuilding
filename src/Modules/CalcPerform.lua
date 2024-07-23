@@ -1189,7 +1189,7 @@ function calcs.perform(env, skipEHP)
 			elseif activeSkill.activeEffect.grantedEffect.name == "Intimidating Cry" and not modDB:Flag(nil, "IntimidatingActive") then
 				local intimidatingMovementSpeed = activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "IntimidatingMovementSpeedPer5MP")
 				env.player.modDB:NewMod("NumIntimidatingExerts", "BASE", m_floor((activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "IntimidatingExertedAttacks") + extraExertions) * exertMultiplier))
-				env.player.modDB:NewMod("EnemyPhysicalDamageReduction", "BASE", m_floor(intimidatingMovementSpeed * buff_inc) * uptime, "Intimidating Cry", { type = "Multiplier", var = "WarcryPower", div = 5, limit = 6 })
+				env.player.modDB:NewMod("MovementSpeed", "INC", m_floor(intimidatingMovementSpeed * buff_inc) * uptime, "Intimidating Cry", { type = "Multiplier", var = "WarcryPower", div = 5, limit = 6 })
 				modDB:NewMod("IntimidatingActive", "FLAG", true) -- Prevents effect from applying multiple times
 			elseif activeSkill.activeEffect.grantedEffect.name == "Rallying Cry" and not modDB:Flag(nil, "RallyingActive") then
 				env.player.modDB:NewMod("NumRallyingExerts", "BASE", m_floor((activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "RallyingExertedAttacks") + extraExertions) * exertMultiplier))
@@ -1212,10 +1212,8 @@ function calcs.perform(env, skipEHP)
 			elseif activeSkill.activeEffect.grantedEffect.name == "Seismic Cry" and not modDB:Flag(nil, "SeismicActive") then
 				local seismicStunEffect = activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicStunThresholdPer5MP")
 				local seismicArmour = activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicArmourPer5MP")
-				local SeismicAoEMoreMultiplier = activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicAoEMoreMultiplier")
+				env.player.modDB:NewMod("SeismicMoreAoE", "BASE", activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicAoEMoreMultiplier"))
 				env.player.modDB:NewMod("NumSeismicExerts", "BASE", m_floor((activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicExertedAttacks") + extraExertions) * exertMultiplier))
-				env.player.modDB:NewMod("SeismicIncAoEPerExert", "BASE", activeSkill.skillModList:Sum("BASE", env.player.mainSkill.skillCfg, "SeismicAoEIncMultiplier"))
-				env.player.modDB:NewMod("AreaOfEffect", "MORE", m_floor(SeismicAoEMoreMultiplier * buff_inc) * uptime, "Seismic Cry")
 				env.player.modDB:NewMod("StunThreshold", "INC", m_floor(seismicStunEffect * buff_inc) * uptime, "Seismic Cry", { type = "Multiplier", var = "WarcryPower", div = 5, limit = 5 })
 				env.player.modDB:NewMod("Armour", "MORE", m_floor(seismicArmour * buff_inc) * uptime, "Seismic Cry", { type = "Multiplier", var = "WarcryPower", div = 5, limit = 5 })
 				modDB:NewMod("SeismicActive", "FLAG", true) -- Prevents effect from applying multiple times
@@ -1870,7 +1868,7 @@ function calcs.perform(env, skipEHP)
 			end
 			if activeSkill.activeEffect.grantedEffect.name == "Penance Brand of Dissipation" and activeSkill.skillPart == 2 then
 				local activation_frequency, duration = getCachedOutputValue(env, activeSkill, "HitSpeed", "Duration") -- HitSpeed is the brand activation frequency
-				local ticks = m_min((m_floor(activation_frequency * duration) - 1), 19)
+				local ticks = m_max(m_min((m_floor((activation_frequency or 0) * duration) - 1), 19), 0)
 				activeSkill.skillModList:NewMod("Multiplier:PenanceBrandofDissipationMaxStages", "BASE", ticks, "Base")
 				activeSkill.skillModList:NewMod("Multiplier:PenanceBrandofDissipationStageAfterFirst", "BASE", ticks, "Base")
 			end
