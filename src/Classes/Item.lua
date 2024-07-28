@@ -897,7 +897,7 @@ function ItemClass:ParseRaw(raw, rarity, highQuality)
 end
 
 function ItemClass:NormaliseQuality()
-	if self.base and (self.base.armour or self.base.weapon or self.base.flask) then
+	if self.base and (self.base.armour or self.base.weapon or self.base.flask or self.base.tincture) then
 		if not self.quality then
 			self.quality = 0
 		elseif not self.uniqueID and not self.corrupted and not self.split and not self.mirrored and self.quality < 20 then
@@ -927,12 +927,6 @@ function ItemClass:GetModSpawnWeight(mod, includeTags, excludeTags)
 		for i, key in ipairs(mod.weightKey) do
 			if (self.base.tags[key] or (includeTags and includeTags[key]) or HasInfluenceTag(key)) and not (excludeTags and excludeTags[key]) then
 				weight = (HasInfluenceTag(key) and HasMavenInfluence(mod.affix)) and 1000 or mod.weightVal[i]
-				break
-			end
-		end
-		for i, key in ipairs(mod.weightMultiplierKey) do
-			if (self.base.tags[key] or (includeTags and includeTags[key]) or HasInfluenceTag(key)) and not (excludeTags and excludeTags[key]) then
-				weight = weight * mod.weightMultiplierVal[i] / 100
 				break
 			end
 		end

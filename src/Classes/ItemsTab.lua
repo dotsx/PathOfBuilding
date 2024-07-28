@@ -1040,7 +1040,6 @@ function ItemsTabClass:Load(xml, dbFileName)
 		self.showStatDifferences = xml.attrib.showStatDifferences == "true"
 	end
 	self:ResetUndo()
-	self.build:SyncLoadouts()
 end
 
 function ItemsTabClass:Save(xml)
@@ -1301,6 +1300,7 @@ function ItemsTabClass:SetActiveItemSet(itemSetId)
 	end
 	self.build.buildFlag = true
 	self:PopulateSlots()
+	self.build:SyncLoadouts()
 end
 
 -- Equips the given item in the given item set
@@ -3301,6 +3301,10 @@ function ItemsTabClass:AddItemTooltip(tooltip, item, slot, dbMode)
 	elseif base.tincture then
 		-- Tincture-specific info
 		local tinctureData = item.tinctureData
+		
+		if item.quality and item.quality > 0 then
+			tooltip:AddLine(16, s_format("^x7F7F7FQuality: "..colorCodes.MAGIC.."+%d%%", item.quality))
+		end
 
 		tooltip:AddLine(16, s_format("^x7F7F7FInflicts Mana Burn every %s%.2f ^x7F7F7FSeconds", main:StatColor(tinctureData.manaBurn, base.tincture.manaBurn), tinctureData.manaBurn))
 		tooltip:AddLine(16, s_format("^x7F7F7F%s%.2f ^x7F7F7FSecond Cooldown When Deactivated", main:StatColor(tinctureData.cooldown, base.tincture.cooldown), tinctureData.cooldown))
@@ -3654,7 +3658,7 @@ function ItemsTabClass:AddItemTooltip(tooltip, item, slot, dbMode)
 		if item.rarity == "MAGIC" then
 			effectInc = effectInc + modDB:Sum("INC", { actor = "player" }, "MagicTinctureEffect")
 		end
-		local effectMod = 1 + (tinctureData.effectInc + effectInc) / 100
+		local effectMod = (1 + (tinctureData.effectInc + effectInc) / 100) * (1 + (item.quality or 0) / 100)
 		if effectMod ~= 1 then
 			t_insert(stats, s_format("^8Tincture effect modifier: ^7%+d%%", effectMod * 100 - 100))
 		end
