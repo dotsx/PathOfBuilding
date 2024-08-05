@@ -1822,7 +1822,7 @@ local function flag(name, ...)
 end
 
 local gemIdLookup = {
-	["power charge on critical strike"] = "SupportPowerChargeOnCrit",
+	["power charge on critical strike"] = "SupportPowerChargeOnCritical",
 }
 for name, grantedEffect in pairs(data.skills) do
 	if not grantedEffect.hidden or grantedEffect.fromItem or grantedEffect.fromTree then
@@ -3595,7 +3595,6 @@ local specialModList = {
 		mod("Multiplier:WarcryNearbyEnemies", "BASE", num),
 	} end,
 	["enemies taunted by your warcries take (%d+)%% increased damage"] = function(num) return { mod("EnemyModifier", "LIST", { mod = mod("DamageTaken", "INC", num, { type = "Condition", var = "Taunted" }) }, { type = "Condition", var = "UsedWarcryRecently" }) } end,
-	["warcries share their cooldown"] = { flag("WarcryShareCooldown") },
 	["warcries have minimum of (%d+) power"] = { flag("CryWolfMinimumPower") },
 	["warcries have infinite power"] = { flag("WarcryInfinitePower") },
 	["your warcries do not grant buffs or charges to you"] = { flag("CannotGainWarcryBuffs") },
@@ -4212,7 +4211,7 @@ local specialModList = {
 	["reflects (%d+) physical damage to melee attackers"] = { },
 	["ignore all movement penalties from armour"] = { flag("Condition:IgnoreMovementPenalties") },
 	["gain armour equal to your reserved mana"] = { mod("Armour", "BASE", 1, { type = "PerStat", stat = "ManaReserved", div = 1 }) },
-	["gain ward instead of (%d+)%% of armour and evasion rating from equipped body armour"] = {flag("ConvertBodyArmourArmourEvasionToWard")},
+	["gain ward instead of (%d+)%% of armour and evasion rating from equipped body armour"] = function(num) return {flag("ConvertBodyArmourArmourEvasionToWard"), mod("BodyArmourArmourEvasionToWardPercent", "BASE", num)} end,
 	["(%d+)%% increased armour per (%d+) reserved mana"] = function(num, _, mana) return { mod("Armour", "INC", num, { type = "PerStat", stat = "ManaReserved", div = tonumber(mana) }) } end,
 	["cannot be stunned"] = { flag("StunImmune"), },
 	["cannot be stunned while bleeding"] = { flag("StunImmune", { type = "Condition", var = "Bleeding" }), },

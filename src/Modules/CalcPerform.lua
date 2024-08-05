@@ -766,7 +766,7 @@ local function doActorCharges(env, actor)
 	-- Calculate current and maximum charges
 	output.PowerChargesMin = m_max(modDB:Sum("BASE", nil, "PowerChargesMin"), 0)
 	output.PowerChargesMax = m_max(modDB:Sum("BASE", nil, "PowerChargesMax"), 0)
-    output.PowerChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * (1 + modDB:Sum("INC", nil, "PowerChargesDuration", "ChargeDuration") / 100))
+    output.PowerChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * calcLib.mod(modDB, nil, "PowerChargesDuration", "ChargeDuration"))
 	if modDB:Flag(nil, "MaximumFrenzyChargesIsMaximumPowerCharges") then
 		local source = modDB.mods["MaximumFrenzyChargesIsMaximumPowerCharges"][1].source
 		if not modDB:HasMod("OVERRIDE", {source = source:match("[^:]+")}, "FrenzyChargesMax") then
@@ -775,7 +775,7 @@ local function doActorCharges(env, actor)
 	end
 	output.FrenzyChargesMin = m_max(modDB:Sum("BASE", nil, "FrenzyChargesMin"), 0)
 	output.FrenzyChargesMax = m_max(modDB:Flag(nil, "MaximumFrenzyChargesIsMaximumPowerCharges") and output.PowerChargesMax or modDB:Sum("BASE", nil, "FrenzyChargesMax"), 0)
-	output.FrenzyChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * (1 + modDB:Sum("INC", nil, "FrenzyChargesDuration", "ChargeDuration") / 100))
+	output.FrenzyChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * calcLib.mod(modDB, nil, "FrenzyChargesDuration", "ChargeDuration"))
 	if modDB:Flag(nil, "MaximumEnduranceChargesIsMaximumFrenzyCharges") then
 		local source = modDB.mods["MaximumEnduranceChargesIsMaximumFrenzyCharges"][1].source
 		if not modDB:HasMod("OVERRIDE", {source = source:match("[^:]+")}, "EnduranceChargesMax") then
@@ -784,7 +784,7 @@ local function doActorCharges(env, actor)
 	end
 	output.EnduranceChargesMin = m_max(modDB:Sum("BASE", nil, "EnduranceChargesMin"), 0)
 	output.EnduranceChargesMax = m_max(env.partyMembers.modDB:Flag(nil, "PartyMemberMaximumEnduranceChargesEqualToYours") and env.partyMembers.output.EnduranceChargesMax or (modDB:Flag(nil, "MaximumEnduranceChargesIsMaximumFrenzyCharges") and output.FrenzyChargesMax or modDB:Sum("BASE", nil, "EnduranceChargesMax")), 0)
-	output.EnduranceChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * (1 + modDB:Sum("INC", nil, "EnduranceChargesDuration", "ChargeDuration") / 100))
+	output.EnduranceChargesDuration = m_floor(modDB:Sum("BASE", nil, "ChargeDuration") * calcLib.mod(modDB, nil, "EnduranceChargesDuration", "ChargeDuration"))
 	output.SiphoningChargesMax = m_max(modDB:Sum("BASE", nil, "SiphoningChargesMax"), 0)
 	output.ChallengerChargesMax = m_max(modDB:Sum("BASE", nil, "ChallengerChargesMax"), 0)
 	output.BlitzChargesMax = m_max(modDB:Sum("BASE", nil, "BlitzChargesMax"), 0)
@@ -1125,23 +1125,6 @@ function calcs.perform(env, skipEHP)
 				hasGuaranteedBonechill = true
 			end
 		end
-		if activeSkill.skillFlags.warcry and not modDB:Flag(nil, "AlreadyGlobalWarcryCooldown") then
-			local cooldown = calcSkillCooldown(activeSkill.skillModList, activeSkill.skillCfg, activeSkill.skillData)
-			local warcryList = { }
-			local numWarcries, sumWarcryCooldown = 0
-			for _, activeSkill in ipairs(env.player.activeSkillList) do
-				if activeSkill.skillTypes[SkillType.Warcry] then
-					warcryList[activeSkill.skillCfg.skillName] = true
-				end
-			end
-			for _, warcry in pairs(warcryList) do
-				numWarcries = numWarcries + 1
-				sumWarcryCooldown = (sumWarcryCooldown or 0) + cooldown
-			end
-			env.player.modDB:NewMod("GlobalWarcryCooldown", "BASE", sumWarcryCooldown)
-			env.player.modDB:NewMod("GlobalWarcryCount", "BASE", numWarcries)
-			modDB:NewMod("AlreadyGlobalWarcryCooldown", "FLAG", true, "Config") -- Prevents effect from applying multiple times
-		end
 		if activeSkill.minion and activeSkill.minion.minionData and activeSkill.minion.minionData.limit then
 			local limit = activeSkill.skillModList:Sum("BASE", nil, activeSkill.minion.minionData.limit)
 			output[activeSkill.minion.minionData.limit] = m_max(limit, output[activeSkill.minion.minionData.limit] or 0)
@@ -1211,7 +1194,8 @@ function calcs.perform(env, skipEHP)
 		if armourData then
 			ward = armourData.Evasion + armourData.Armour
 			if ward > 0 then
-				modDB:NewMod("Ward", "BASE", ward * 0.5 , "Body Armour Armour And Evasion Rating to Ward Conversion")
+				local wardMult = ((modDB:Sum("BASE", nil,"BodyArmourArmourEvasionToWardPercent") or 0) / 100)
+				modDB:NewMod("Ward", "BASE", ward * wardMult , "Body Armour Armour And Evasion Rating to Ward Conversion")
 			end
 		end
 	end
@@ -1529,7 +1513,7 @@ function calcs.perform(env, skipEHP)
 		breakdown.ManaReserved = { reservations = { } }
 	end
 	for _, activeSkill in ipairs(env.player.activeSkillList) do
-		if activeSkill.skillTypes[SkillType.HasReservation] and not activeSkill.skillTypes[SkillType.ReservationBecomesCost] then
+		if activeSkill.skillTypes[SkillType.HasReservation] or activeSkill.skillData.SupportedByAutoexertion and not activeSkill.skillTypes[SkillType.ReservationBecomesCost] then
 			local skillModList = activeSkill.skillModList
 			local skillCfg = activeSkill.skillCfg
 			local mult = floor(skillModList:More(skillCfg, "SupportManaMultiplier"), 4)
@@ -1701,23 +1685,16 @@ function calcs.perform(env, skipEHP)
 		end
 	end
 
-	-- Calculate number of active heralds
+	-- Calculate number of active heralds and auras affecting self
 	if env.mode_buffs then
 		local heraldList = { }
+		local auraList = { }
 		for _, activeSkill in ipairs(env.player.activeSkillList) do
 			if activeSkill.skillTypes[SkillType.Herald] and not heraldList[activeSkill.skillCfg.skillName] then
 				heraldList[activeSkill.skillCfg.skillName] = true
 				modDB.multipliers["Herald"] = (modDB.multipliers["Herald"] or 0) + 1
 				modDB.conditions["AffectedByHerald"] = true
-			end
-		end
-	end
-
-	-- Calculate number of active auras affecting self
-	if env.mode_buffs then
-		local auraList = { }
-		for _, activeSkill in ipairs(env.player.activeSkillList) do
-			if activeSkill.skillTypes[SkillType.Aura] and not activeSkill.skillTypes[SkillType.AuraAffectsEnemies] and not activeSkill.skillData.auraCannotAffectSelf and not auraList[activeSkill.skillCfg.skillName] then
+			elseif activeSkill.skillTypes[SkillType.Aura] and not activeSkill.skillTypes[SkillType.AuraAffectsEnemies] and not activeSkill.skillData.auraCannotAffectSelf and not auraList[activeSkill.skillCfg.skillName] then
 				auraList[activeSkill.skillCfg.skillName] = true
 				modDB.multipliers["AuraAffectingSelf"] = (modDB.multipliers["AuraAffectingSelf"] or 0) + 1
 			end
@@ -1885,13 +1862,12 @@ function calcs.perform(env, skipEHP)
 						local extraExertions = modStore:Sum("BASE", nil, "ExtraExertedAttacks") or 0
 						local exertMultiplier = modStore:More(nil, "ExtraExertedAttacks")
 						env.player.modDB:NewMod("Num"..warcryName.."Exerts", "BASE", m_floor((baseExerts + extraExertions) * exertMultiplier))
+						env.player.modDB:NewMod("ExertingWarcryCount", "BASE", 1)
 					end
 					local full_duration = calcSkillDuration(modStore, skillCfg, activeSkill.skillData, env, enemyDB)
 					local cooldownOverride = modStore:Override(skillCfg, "CooldownRecovery")
 					local actual_cooldown = cooldownOverride or (activeSkill.skillData.cooldown  + modStore:Sum("BASE", skillCfg, "CooldownRecovery")) / calcLib.mod(modStore, skillCfg, "CooldownRecovery")
-					local globalCooldown = modDB:Sum("BASE", nil, "GlobalWarcryCooldown")
-					local globalCount = modDB:Sum("BASE", nil, "GlobalWarcryCount")
-					local uptime = modDB:Flag(nil, "Condition:WarcryMaxHit") and 1 or modDB:Flag(nil, "WarcryShareCooldown") and m_min(full_duration / (actual_cooldown + (globalCooldown - actual_cooldown) / globalCount), 1) or m_min(full_duration / actual_cooldown, 1)
+					local uptime = modDB:Flag(nil, "Condition:WarcryMaxHit") and 1 or m_min(full_duration / actual_cooldown, 1)
 					if not activeSkill.skillModList:Flag(nil, "CannotShareWarcryBuffs") then
 						if not modDB:Flag(nil, "CannotGainWarcryBuffs") then
 							if not buff.applyNotPlayer then
@@ -3114,7 +3090,7 @@ function calcs.perform(env, skipEHP)
 			buffExports.PlayerMods["EnduranceChargesMax="..tostring(output["EnduranceChargesMax"])] = true
 		end
 
-		buffExports.PlayerMods["MovementSpeedMod|percent|max="..tostring(output["MovementSpeedMod"] * 100)] = true
+		buffExports.PlayerMods["MovementSpeedMod|percent|max="..tostring(m_floor(output["MovementSpeedMod"] * 100))] = true
 		
 		for _, mod in ipairs(buffExports["Aura"]["extraAura"].modList) do
 			-- leaving comment to make it easier for future similar mods
