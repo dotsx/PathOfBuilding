@@ -779,7 +779,7 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 
 	local function constructUI(modGroup)
 		local totalHeight = 43
-		local maxWidth = 375
+		local maxWidth = IsEN() and 375 or 975
 		local i = 1
 		while controls[i] do
 			controls[i] = nil
