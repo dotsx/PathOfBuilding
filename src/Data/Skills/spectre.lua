@@ -10554,12 +10554,13 @@ skills["RevenantBossSpellProjectile"] = {
 	color = 4,
 	baseEffectiveness = 3.125,
 	incrementalEffectiveness = 0.046000000089407,
-	skillTypes = { [SkillType.Spell] = true, [SkillType.Projectile] = true, [SkillType.ProjectilesFromUser] = true, [SkillType.Triggerable] = true, [SkillType.Damage] = true, [SkillType.Multicastable] = true, },
+	skillTypes = { [SkillType.Spell] = true, [SkillType.Projectile] = true, [SkillType.ProjectilesFromUser] = true, [SkillType.Triggerable] = true, },
 	statDescriptionScope = "skill_stat_descriptions",
 	castTime = 1,
 	baseFlags = {
 		spell = true,
 		projectile = true,
+		triggerable = true,
 	},
 	constantStats = {
 		{ "monster_projectile_variation", 7 },
@@ -10576,34 +10577,5 @@ skills["RevenantBossSpellProjectile"] = {
 	},
 	levels = {
 		[1] = { 0.60000002384186, 1.3999999761581, levelRequirement = 3, statInterpolation = { 3, 3, }, },
-	},
-}
-skills["MPSAncestralPoiProjectile"] = {
-	name = "Cold Projectile",
-	hidden = true,
-	color = 4,
-	baseEffectiveness = 1.5,
-	incrementalEffectiveness = 0.042500000447035,
-	skillTypes = { [SkillType.Spell] = true, [SkillType.Projectile] = true, [SkillType.ProjectilesFromUser] = true, [SkillType.Triggerable] = true, [SkillType.Damage] = true, },
-	statDescriptionScope = "skill_stat_descriptions",
-	castTime = 1,
-	baseFlags = {
-		spell = true,
-		projectile = true,
-	},
-	constantStats = {
-		{ "monster_projectile_variation", 234 },
-		{ "removes_%_mana_on_hit", 2 },
-	},
-	stats = {
-		"spell_minimum_base_cold_damage",
-		"spell_maximum_base_cold_damage",
-		"base_is_projectile",
-		"projectile_uses_contact_position",
-		"use_scaled_contact_offset",
-		"projectile_ballistic_angle_from_reference_event",
-	},
-	levels = {
-		[1] = { 0.80000001192093, 1.2000000476837, critChance = 5, levelRequirement = 0, statInterpolation = { 3, 3, }, },
 	},
 }

@@ -501,7 +501,10 @@ holding Shift will put it in the second.]])
 		self:AddImplicitToDisplayItem()
 	end)
 	self.controls.displayItemAddImplicit.shown = function()
-		return self.displayItem and self.displayItem.type ~= "Tincture" and (self.displayItem.corruptible or ((self.displayItem.type ~= "Flask" or self.displayItem.type ~= "Jewel") and (self.displayItem.rarity == "NORMAL" or self.displayItem.rarity == "MAGIC" or self.displayItem.rarity == "RARE")))
+		return self.displayItem and
+			self.displayItem.type ~= "Tincture" and (self.displayItem.corruptible or ((self.displayItem.type ~= "Flask" and self.displayItem.type ~= "Jewel") and
+			(self.displayItem.rarity == "NORMAL" or self.displayItem.rarity == "MAGIC" or self.displayItem.rarity == "RARE"))) and 
+			not self.displayItem.implicitsCannotBeChanged
 	end
 
 	-- Section: Influence dropdowns
@@ -1664,9 +1667,13 @@ end
 -- Update affix selection controls
 function ItemsTabClass:UpdateAffixControls()
 	local item = self.displayItem
-	for i = 1, item.affixLimit/2 do
-		self:UpdateAffixControl(self.controls["displayItemAffix"..i], item, "Prefix", "prefixes", i)
-		self:UpdateAffixControl(self.controls["displayItemAffix"..(i+item.affixLimit/2)], item, "Suffix", "suffixes", i)
+	local prefixLimit = item.prefixes.limit or (item.affixLimit / 2)
+	for i = 1, item.affixLimit do
+		if i <= prefixLimit then
+			self:UpdateAffixControl(self.controls["displayItemAffix"..i], item, "Prefix", "prefixes", i)
+		else
+			self:UpdateAffixControl(self.controls["displayItemAffix"..i], item, "Suffix", "suffixes", i - prefixLimit)
+		end
 	end	
 	-- The custom affixes may have had their indexes changed, so the custom control UI is also rebuilt so that it will
 	-- reference the correct affix index.
@@ -1677,7 +1684,7 @@ function ItemsTabClass:UpdateAffixControl(control, item, type, outputTable, outp
 	local extraTags = { }
 	local excludeGroups = { }
 	for _, table in ipairs({"prefixes","suffixes"}) do
-		for index = 1, item.affixLimit/2 do
+		for index = 1, (item[table].limit or (item.affixLimit / 2)) do
 			if index ~= outputIndex or table ~= outputTable then
 				local mod = item.affixes[item[table][index] and item[table][index].modId]
 				if mod then
@@ -2428,8 +2435,13 @@ function ItemsTabClass:CorruptDisplayItem(modType)
 			currentModType = "ScourgeUpside"
 			buildImplicitList("ScourgeUpside")
 			buildImplicitList("ScourgeDownside")
-			controls.implicit3Label.shown = true
+			controls.implicit.shown = true
+			controls.implicitLabel.shown = true
+			controls.implicit2.shown = true
+			controls.implicit2Label.shown = true
 			controls.implicit3.shown = true
+			controls.implicit3Label.shown = true
+			controls.implicitCannotBeChangedLabel.shown = false
 			main.popups[1].height = 147
 			controls.close.y = 117
 			controls.save.y = 117
@@ -2445,10 +2457,15 @@ function ItemsTabClass:CorruptDisplayItem(modType)
 			buildList(controls.implicit4, controls.implicit3, "ScourgeDownside")
 		else
 			currentModType = value
+			controls.implicit.shown = not self.displayItem.implicitsCannotBeChanged
+			controls.implicitLabel.shown = not self.displayItem.implicitsCannotBeChanged
+			controls.implicit2.shown = not self.displayItem.implicitsCannotBeChanged
+			controls.implicit2Label.shown = not self.displayItem.implicitsCannotBeChanged
 			controls.implicit3Label.shown = false
 			controls.implicit3.shown = false
 			controls.implicit4Label.shown = false
 			controls.implicit4.shown = false
+			controls.implicitCannotBeChangedLabel.shown = self.displayItem.implicitsCannotBeChanged
 			controls.implicit2.y = 65
 			main.popups[1].height = 129
 			controls.close.y = 99
@@ -2475,6 +2492,8 @@ function ItemsTabClass:CorruptDisplayItem(modType)
 			self:AddModComparisonTooltip(tooltip, value.mod)
 		end
 	end
+	controls.implicit.shown = not self.displayItem.implicitsCannotBeChanged
+	controls.implicitLabel.shown = not self.displayItem.implicitsCannotBeChanged
 	controls.implicit2Label = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, 75, 65, 0, 16, "^7Implicit #2:")
 	controls.implicit2 = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, 80, 65, 440, 18, nil, function()
 		buildList(controls.implicit, controls.implicit2, currentModType)
@@ -2488,6 +2507,8 @@ function ItemsTabClass:CorruptDisplayItem(modType)
 			self:AddModComparisonTooltip(tooltip, value.mod)
 		end
 	end
+	controls.implicit2.shown = not self.displayItem.implicitsCannotBeChanged
+	controls.implicit2Label.shown = not self.displayItem.implicitsCannotBeChanged
 	controls.implicit3Label = new("LabelControl", {"TOPRIGHT",nil,"TOPLEFT"}, 75, 85, 0, 16, "^7Implicit #3:")
 	controls.implicit3 = new("DropDownControl", {"TOPLEFT",nil,"TOPLEFT"}, 80, 65, 440, 18, nil, function()
 		buildList(controls.implicit4, controls.implicit3, "ScourgeDownside")
@@ -2518,6 +2539,8 @@ function ItemsTabClass:CorruptDisplayItem(modType)
 	end
 	controls.implicit4Label.shown = false
 	controls.implicit4.shown = false
+	controls.implicitCannotBeChangedLabel = new("LabelControl", {"TOPLEFT",nil,"TOPLEFT"}, 20, 45, 0, 20, "^7This Items Implicits Cannot Be Changed")
+	controls.implicitCannotBeChangedLabel.shown = self.displayItem.implicitsCannotBeChanged
 	buildList(controls.implicit, controls.implicit2, currentModType)
 	buildList(controls.implicit2, controls.implicit, currentModType)
 	controls.save = new("ButtonControl", nil, -45, 99, 80, 20, modType, function()
@@ -2546,7 +2569,7 @@ function ItemsTabClass:AddCustomModifierToDisplayItem()
 		if sourceId == "MASTER" then
 			local excludeGroups = { }
 			for _, modLine in ipairs({ self.displayItem.prefixes, self.displayItem.suffixes }) do
-				for i = 1, self.displayItem.affixLimit / 2 do
+				for i = 1, (modLine.limit or (self.displayItem.affixLimit / 2)) do
 					if modLine[i].modId ~= "None" then
 						excludeGroups[self.displayItem.affixes[modLine[i].modId].group] = true
 					end
@@ -3041,15 +3064,15 @@ function ItemsTabClass:AddImplicitToDisplayItem()
 			local listMod = modList[modGroups[controls.modGroupSelect.selIndex].modListIndex][controls.modSelect.selIndex]
 			local index
 			for i, implicitMod in ipairs(item.implicitModLines) do
-				if implicitMod[listMod.type] and implicitMod[listMod.type] == "{"..listMod.type.."}" then
+				if implicitMod[listMod.type] then
 					index = i
 					break
 				end
 			end
 			if index then
 				for i, line in ipairs(listMod.mod) do
-                    item.implicitModLines[index + i - 1] = { line = line, modTags = listMod.mod.modTags, [listMod.type] = true }
-                end
+					item.implicitModLines[index + i - 1] = { line = line, modTags = listMod.mod.modTags, [listMod.type] = true }
+				end
 			else
 				for _, line in ipairs(listMod.mod) do
 					t_insert(item.implicitModLines, { line = line, modTags = listMod.mod.modTags, [listMod.type] = true })
@@ -3278,13 +3301,13 @@ function ItemsTabClass:AddItemTooltip(tooltip, item, slot, dbMode)
 			end
 		end
 		if flaskData.manaTotal then
-			if flaskData.manaGradual then
+			if flaskData.manaGradual ~= 0 then
 				tooltip:AddLine(16, s_format("^x7F7F7FRecovers %s%d ^x7F7F7FMana over %s%.1f0 ^x7F7F7FSeconds",
 					main:StatColor(flaskData.manaTotal, base.flask.mana), flaskData.manaGradual,
 					main:StatColor(flaskData.duration, base.flask.duration), flaskData.duration
 					))
 			end
-			if flaskData.manaInstant then
+			if flaskData.manaInstant ~= 0 then
 				tooltip:AddLine(16, s_format("^x7F7F7FRecovers %s%d ^x7F7F7FMana instantly", main:StatColor(flaskData.manaTotal, base.flask.mana), flaskData.manaInstant))
 			end
 		end
