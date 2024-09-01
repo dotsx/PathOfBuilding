@@ -123,16 +123,23 @@ local function loadTimelessJewel(jewelType, nodeID)
 			local sizeOffset = GV_nodecount * seedSize
 			data.timelessJewelLUTs[jewelType].sizes = jewelData:sub(1, sizeOffset + 1)
 
+			local lookupTbl = {}
+			for k, v in pairs(data.nodeIDList) do
+				if type(v) == "table" then
+					lookupTbl[v.index] = k
+				end
+			end
+					
 			-- Loop through nodes in order as if we were reading from a file
 			for i = 1, GV_nodecount do
 				-- Find the node this corresponds to
-				local nodeID
-				for k, v in pairs(data.nodeIDList) do
-					if type(v) == "table" and v.index == (i - 1) then
-						nodeID = k
-						break
-					end
-				end
+				local nodeID = lookupTbl[i-1]
+				-- for k, v in pairs(data.nodeIDList) do
+				-- 	if type(v) == "table" and v.index == (i - 1) then
+				-- 		nodeID = k
+				-- 		break
+				-- 	end
+				-- end
 				-- Preliminary initialization
 				local seedDataLength = data.nodeIDList[nodeID].size
 				data.timelessJewelLUTs[jewelType].data[i] = {}
